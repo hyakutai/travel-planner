@@ -230,24 +230,43 @@
         const name = document.getElementById('share-name').value;
         const password = document.getElementById('share-pass').value;
         if (!name || !password) { alert("件名とパスワードを入力してください"); return; }
+
+        // データ準備
         const payload = { name: name, password: password, data: tripData };
 
+        // 既存チェック（簡易的: 名前が同じものがあれば上書き、なければ新規）
+        // ※ 本来はID管理すべきですが、今回は「件名とパスワード」の一致で簡易認証とします
+        
         try {
-            const { data: existing, error: searchError } = await supabase.from('plans').select('*').eq('name', name);
+            // まず同じ名前のデータがあるか検索
+            const { data: existing, error: searchError } = await supabase
+                .from('plans')
+                .select('*')
+                .eq('name', name);
+
             if (searchError) throw searchError;
 
             if (existing && existing.length > 0) {
+                // 存在するならパスワードチェック
                 const target = existing[0];
                 if (target.password !== password) {
-                    alert("同じ件名のプランが存在しますが、パスワードが違います。");
+                    alert("同じ件名のプランが存在しますが、パスワードが違います。\n別の件名にするか、正しいパスワードを入力してください。");
                     return;
                 }
-                const { error: updateError } = await supabase.from('plans').update({ data: tripData }).eq('id', target.id);
+                // 上書き更新
+                const { error: updateError } = await supabase
+                    .from('plans')
+                    .update({ data: tripData })
+                    .eq('id', target.id);
                 if (updateError) throw updateError;
             } else {
-                const { error: insertError } = await supabase.from('plans').insert([payload]);
+                // 新規作成
+                const { error: insertError } = await supabase
+                    .from('plans')
+                    .insert([payload]);
                 if (insertError) throw insertError;
             }
+
             alert(`クラウドに保存しました！\n件名: ${name}\nパスワード: ${password}`);
             document.getElementById('shareModal').style.display = 'none';
             currentPlanName = name;
@@ -264,17 +283,31 @@
         if (!name || !password) { alert("件名とパスワードを入力してください"); return; }
 
         try {
-            const { data, error } = await supabase.from('plans').select('*').eq('name', name);
+            const { data, error } = await supabase
+                .from('plans')
+                .select('*')
+                .eq('name', name);
+            
             if (error) throw error;
-            if (!data || data.length === 0) { alert("その件名のプランは見つかりませんでした"); return; }
-            const plan = data[0];
-            if (plan.password !== password) { alert("パスワードが間違っています"); return; }
 
+            if (!data || data.length === 0) {
+                alert("その件名のプランは見つかりませんでした");
+                return;
+            }
+
+            const plan = data[0];
+            if (plan.password !== password) {
+                alert("パスワードが間違っています");
+                return;
+            }
+
+            // 読み込み成功
             tripData = plan.data;
             currentDayIndex = 0;
             currentPlanName = plan.name;
             showPlanner();
             alert(`「${plan.name}」を読み込みました！`);
+
         } catch (e) {
             console.error(e);
             alert("読み込みに失敗しました: " + e.message);
@@ -302,6 +335,8 @@
         currentDayIndex = 0; currentPlanName = "";
         showPlanner();
     }
+    
+    // 全日程概要
     window.showSummary = () => {
         const container = document.getElementById('summaryContent');
         container.innerHTML = '';
@@ -321,6 +356,8 @@
         });
         document.getElementById('summaryModal').style.display = 'flex';
     };
+
+    // ローカル保存
     function renderSavedPlansList() {
         const listEl = document.getElementById('saved-plans-list'); listEl.innerHTML = '';
         const allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
@@ -354,6 +391,8 @@
         let allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
         delete allSaves[name]; localStorage.setItem("travel_planner_saves", JSON.stringify(allSaves)); renderSavedPlansList();
     };
+
+    // ロジック
     function renderTabs() {
         const container = document.getElementById('dayTabs'); container.innerHTML = '';
         tripData.days.forEach((_, idx) => {
