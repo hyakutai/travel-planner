@@ -2,88 +2,78 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>旅のプランナー Step 8 (Memo)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅のプランナー v32 (Local Only)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     <style>
-        /* --- 基本スタイル (Step 7と同じ) --- */
-        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background-color: #f0f2f5; overflow: hidden; }
-        #map-container { flex: 6; border-right: 2px solid #ddd; }
+        /* --- 基本スタイル --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; display: flex; height: 100vh; background-color: #f0f2f5; overflow: hidden; }
+        #map-container { flex: 0 0 60%; border-right: 2px solid #ddd; position: relative; }
         #map { width: 100%; height: 100%; }
-        #panel { flex: 4; padding: 0; overflow-y: auto; background: #fff; min-width: 320px; display: flex; flex-direction: column; }
+        #panel { flex: 1; padding: 0; overflow-y: auto; background: white; display: flex; flex-direction: column; min-width: 320px; position: relative; }
         .view-container { padding: 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
-
+        
         /* ホーム画面 */
         .home-title { font-size: 1.5rem; color: #1a73e8; text-align: center; margin: 30px 0; }
-        .new-plan-btn { background: #1a73e8; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 30px; }
+        .new-plan-btn { background: #1a73e8; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(26, 115, 232, 0.3); }
         .saved-list-title { font-size: 1rem; color: #555; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
         .saved-plans-list { list-style: none; padding: 0; margin: 0; }
-        .saved-plan-card { background: white; border: 1px solid #ddd; border-left: 5px solid #34a853; padding: 15px; margin-bottom: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .plan-delete { color: #ea4335; cursor: pointer; padding: 5px; font-size: 1.2rem; }
+        .saved-plan-card { background: white; border: 1px solid #ddd; border-left: 5px solid #34a853; padding: 12px; margin-bottom: 8px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .saved-plan-card:hover { background: #f9f9f9; }
+        .plan-info h3 { margin: 0; font-size: 1rem; color: #333; }
+        .plan-delete { color: #ea4335; cursor: pointer; padding: 5px; font-size: 1.1rem; }
 
         /* 編集画面 */
         .header-area { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a73e8; padding-bottom: 5px; margin-bottom: 10px; }
-        .home-btn { background: #fff; border: 1px solid #ddd; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; color: #666; }
-        
+        .home-btn { background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; color: #666; }
+        .save-btn { font-size: 0.8rem; padding: 4px 12px; border-radius: 4px; cursor: pointer; border: none; background: #1a73e8; color: white; font-weight: bold; margin-left: 5px; }
+
         .day-tabs { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd; flex-shrink: 0; }
         .day-tab { padding: 6px 12px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px 4px 0 0; background: #f8f9fa; cursor: pointer; white-space: nowrap; }
         .day-tab.active { background: #1a73e8; color: white; border-color: #1a73e8; font-weight: bold; }
         .add-day-btn { padding: 6px 10px; cursor: pointer; background: #eee; border: none; border-radius: 4px; font-weight: bold; }
 
         .config-area { display: flex; justify-content: space-between; align-items: center; background: #e8f0fe; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-size: 0.9rem; }
-        .charts-wrapper { display: flex; justify-content: space-around; height: 100px; margin-bottom: 10px; gap: 5px; flex-shrink: 0; }
-        .chart-box { flex: 1; position: relative; }
+        .btn-geo { font-size: 0.8rem; padding: 4px 8px; background: #fff; border: 1px solid #1a73e8; color: #1a73e8; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
         
-        .input-group { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #eee; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
-        .row { display: flex; gap: 5px; align-items: center; }
-        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
-        button.add-btn { padding: 10px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-
-        /* リストスタイル (メモ機能追加) */
-        #placeList { list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #eee; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button.add-btn { padding: 10px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        
+        /* リスト */
+        #scheduleList { list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; }
         li { margin-bottom: 5px; padding: 10px; border-radius: 4px; font-size: 0.9rem; }
-        
-        /* 滞在アイテム */
         .place-item { background: #fff; border-left: 5px solid #1a73e8; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; cursor: grab; position: relative; }
-        
-        /* アイテムの上段（名前やボタン） */
-        .item-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
-        
-        /* ★ メモ表示エリア (ホバー時のみ表示) */
-        .item-memo-box {
-            display: none; /* 最初は隠す */
-            background-color: #fffde7; /* 薄い黄色 */
-            border: 1px solid #fbc02d;
-            color: #555;
-            font-size: 0.85rem;
-            padding: 6px 10px;
-            margin-top: 5px;
-            border-radius: 4px;
-            white-space: pre-wrap; /* 改行を反映 */
-        }
-        /* マウスが乗ったら表示 */
-        .place-item:hover .item-memo-box { display: block; }
-
         .move-item { background: #e8f0fe; color: #1a73e8; font-size: 0.85rem; border: 1px dashed #1a73e8; text-align: center; pointer-events: none; }
         
-        .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 2px 5px; margin-left: 5px; }
+        .item-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+        .item-btns { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 2px 5px; }
         .btn-memo { color: #ccc; transition: 0.3s; }
-        .btn-memo.has-memo { color: #fbc02d; } /* メモありなら黄色 */
+        .btn-memo.has-memo { color: #fbc02d; }
         .btn-del { color: #ea4335; }
 
-        /* --- モーダル (Step 8 追加) --- */
+        .item-memo-box { display: none; background-color: #fffde7; border: 1px solid #fbc02d; color: #555; font-size: 0.85rem; padding: 6px 10px; margin-top: 5px; border-radius: 4px; white-space: pre-wrap; }
+        .place-item:hover .item-memo-box { display: block; }
+
+        /* 編集用入力フォーム */
+        .tiny-input { width: 50px; padding: 2px 4px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 3px; text-align: right; margin: 0 2px; }
+
+        .charts-wrapper { display: flex; height: 100px; margin-bottom: 10px; gap: 5px; flex-shrink: 0; }
+        .chart-box { flex: 1; position: relative; }
+
+        /* モーダル */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-box { background: white; padding: 20px; border-radius: 8px; width: 320px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .modal-header { font-weight: bold; font-size: 1.1rem; color: #333; }
-        .modal-textarea { width: 100%; height: 120px; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; resize: none; font-family: inherit; }
-        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-cancel { background: #ddd; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-        .btn-save { background: #1a73e8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .modal-box { background: white; padding: 20px; border-radius: 8px; width: 400px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .modal-header { font-weight: bold; font-size: 1.1rem; color: #333; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-content { overflow-y: auto; flex: 1; border-top: 1px solid #eee; padding-top: 10px; }
+        .modal-buttons { margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-textarea { width: 100%; height: 100px; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; resize: none; margin-top: 10px; font-family: inherit; }
         
-        /* 概要モーダル */
         .summary-day { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .summary-day-title { font-weight: bold; color: #1a73e8; background: #e8f0fe; padding: 5px; border-radius: 4px; margin-bottom: 5px; }
-        .summary-memo { color: #666; font-size: 0.8rem; background: #f9f9f9; padding: 2px 6px; border-radius: 4px; margin-left: 10px; }
+        .summary-memo { color: #666; font-size: 0.8rem; background: #f9f9f9; padding: 2px 6px; border-radius: 4px; display: block; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -91,7 +81,6 @@
 <div id="map-container"><div id="map"></div></div>
 
 <div id="panel">
-    
     <div id="home-view" class="view-container">
         <h1 class="home-title">🌍 旅のプランナー</h1>
         <button class="new-plan-btn" onclick="startNewPlan()">＋ 新しい旅を計画する</button>
@@ -101,7 +90,7 @@
 
     <div id="planner-view" class="view-container" style="display: none;">
         <div class="header-area">
-            <button class="home-btn" onclick="goHome()">🏠 ホームへ戻る</button>
+            <button class="home-btn" onclick="goHome()">🏠 ホーム</button>
             <div style="display:flex; gap:10px;">
                 <button onclick="showSummary()" style="background:#1a73e8; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">📋 全日程</button>
                 <button onclick="saveTripLocal()" style="background:#34a853; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">💾 保存</button>
@@ -112,6 +101,7 @@
 
         <div class="config-area">
             <div>出発: <input type="time" id="startTime" value="09:00" onchange="updateStartTime()"></div>
+            <button class="btn-geo" onclick="addCurrentLocation()">📍 現在地を追加</button>
         </div>
 
         <div class="charts-wrapper">
@@ -120,29 +110,29 @@
         </div>
         
         <div class="input-group">
-            <input type="text" id="placeName" placeholder="🔍 場所を検索">
-            <div class="row">
-                <select id="travelMode">
+            <input type="text" id="placeName" placeholder="🔍 目的地を検索">
+            <div style="display:flex; gap:5px;">
+                <select id="travelMode" style="flex:1;">
                     <option value="DRIVING">🚗 車</option>
                     <option value="TRANSIT">🚃 電車</option>
                     <option value="WALKING">🚶 徒歩</option>
                 </select>
-                <input type="number" id="stayTime" placeholder="滞在(分)" value="60">
+                <input type="number" id="stayTime" placeholder="滞在(分)" value="60" style="width: 60px;">
             </div>
-            <button class="add-btn" onclick="addLocation()">リストに追加</button>
+            <button class="add-btn" onclick="addLocation()">追加</button>
         </div>
 
-        <ul id="placeList"></ul>
+        <ul id="scheduleList"></ul>
     </div>
 </div>
 
 <div id="memoModal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="width: 320px;">
         <div class="modal-header">📝 メモ編集</div>
-        <textarea id="memoInput" class="modal-textarea" placeholder="お土産リストや集合場所などを入力..."></textarea>
+        <textarea id="memoInput" class="modal-textarea" placeholder="メモを入力..."></textarea>
         <div class="modal-buttons">
-            <button class="btn-cancel" onclick="closeMemoModal()">キャンセル</button>
-            <button class="btn-save" onclick="saveMemo()">保存</button>
+            <button class="save-btn" style="background:#ddd; color:#333;" onclick="closeMemoModal()">キャンセル</button>
+            <button class="save-btn" onclick="saveMemo()">保存</button>
         </div>
     </div>
 </div>
@@ -151,11 +141,11 @@
     <div class="modal-box" style="width: 400px; max-height: 85vh;">
         <div class="modal-header">
             <span>📋 全日程概要</span>
-            <button onclick="window.print()" style="padding:5px 10px; font-size:0.8rem; cursor:pointer;">🖨 印刷</button>
+            <button onclick="window.print()" style="padding:5px 10px; font-size:0.8rem; background:#fff; border:1px solid #ccc; cursor:pointer;">🖨 印刷</button>
         </div>
         <div id="summaryContent" style="overflow-y:auto; flex:1; border-top:1px solid #eee; padding-top:10px;"></div>
         <div class="modal-buttons">
-            <button class="btn-cancel" onclick="document.getElementById('summaryModal').style.display='none'">閉じる</button>
+            <button class="save-btn" onclick="document.getElementById('summaryModal').style.display='none'">閉じる</button>
         </div>
     </div>
 </div>
@@ -164,8 +154,8 @@
     let map, geocoder, directionsService, chartAM, chartPM, sortable;
     let routeRenderers = [], markers = [];
     window.currentLatLng = null;
-    let editingMemoId = null; // ★ 編集中のメモIDを記憶する変数
-
+    let editingMemoId = null;
+    
     let tripData = { days: [ [] ], startTimes: ["09:00"] };
     let currentDayIndex = 0;
     let currentPlanName = "";
@@ -173,24 +163,25 @@
     function initMap() {
         geocoder = new google.maps.Geocoder();
         directionsService = new google.maps.DirectionsService();
-        map = new google.maps.Map(document.getElementById("map"), { zoom: 13, center: { lat: 35.6812, lng: 139.7671 } });
+        map = new google.maps.Map(document.getElementById("map"), { zoom: 13, center: {lat: 35.6812, lng: 139.7671} });
 
         const input = document.getElementById("placeName");
         const autocomplete = new google.maps.places.Autocomplete(input);
         autocomplete.bindTo("bounds", map);
-
         autocomplete.addListener("place_changed", () => {
             const place = autocomplete.getPlace();
             if (!place.geometry || !place.geometry.location) { alert("場所が見つかりません"); return; }
             map.setCenter(place.geometry.location); map.setZoom(15);
-            new google.maps.Marker({ position: place.geometry.location, map: map });
-            
-            currentPlace = {
-                id: Date.now(),
-                name: place.name || place.formatted_address,
-                lat: place.geometry.location.lat(),
-                lng: place.geometry.location.lng()
-            };
+            window.currentLatLng = place.geometry.location;
+            document.getElementById('placeName').value = place.name || place.formatted_address;
+        });
+
+        map.addListener("click", (e) => {
+            window.currentLatLng = e.latLng;
+            geocoder.geocode({ location: e.latLng }, (results, status) => {
+                if (status === "OK" && results[0]) document.getElementById('placeName').value = results[0].formatted_address;
+            });
+            new google.maps.Marker({ position: e.latLng, map: map, title: "選択位置" });
         });
 
         initCharts();
@@ -198,31 +189,30 @@
         showHome();
     }
 
-    // --- 画面切り替え ---
+    // --- 画面遷移 ---
     function showHome() {
-        document.getElementById("home-view").style.display = "flex";
-        document.getElementById("planner-view").style.display = "none";
+        document.getElementById('home-view').style.display = 'flex';
+        document.getElementById('planner-view').style.display = 'none';
         clearMapOverlays();
         renderSavedPlansList();
     }
     function showPlanner() {
-        document.getElementById("home-view").style.display = "none";
-        document.getElementById("planner-view").style.display = "flex";
-        if(chartAM) chartAM.resize();
-        if(chartPM) chartPM.resize();
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('planner-view').style.display = 'flex';
+        if(chartAM) chartAM.resize(); if(chartPM) chartPM.resize();
         renderTabs();
-        document.getElementById("startTime").value = tripData.startTimes[currentDayIndex] || "09:00";
-        refreshAll();
+        document.getElementById('startTime').value = tripData.startTimes[currentDayIndex];
+        refreshSchedule();
     }
     function startNewPlan() {
         tripData = { days: [ [] ], startTimes: ["09:00"] };
         currentDayIndex = 0; currentPlanName = "";
         showPlanner();
     }
-    function goHome() { if(confirm("ホームに戻りますか？\n（未保存は消えます）")) showHome(); }
+    function goHome() { if(confirm("ホームに戻りますか？\n(保存していない内容は破棄されます)")) showHome(); }
 
     // --- データ操作 ---
-    function getCurrentList() { return tripData.days[currentDayIndex]; }
+    function getCurrentDayList() { return tripData.days[currentDayIndex]; }
 
     function renderTabs() {
         const container = document.getElementById("dayTabs"); container.innerHTML = "";
@@ -241,130 +231,100 @@
     function switchDay(index) {
         currentDayIndex = index; renderTabs();
         document.getElementById("startTime").value = tripData.startTimes[index] || "09:00";
-        refreshAll();
+        refreshSchedule();
     }
     function updateStartTime() {
         tripData.startTimes[currentDayIndex] = document.getElementById("startTime").value;
-        refreshAll();
+        refreshSchedule();
     }
 
-    async function addLocation() {
-        if (!currentPlace) { alert("場所を検索してください"); return; }
-        const mode = document.getElementById("travelMode").value;
-        const stayTime = document.getElementById("stayTime").value;
-        // ★ memo: "" を追加して初期化
-        getCurrentList().push({ ...currentPlace, mode: mode, stayTime: parseInt(stayTime), memo: "" });
-        document.getElementById("placeName").value = "";
-        currentPlace = null;
-        await refreshAll();
-    }
-
-    window.deleteItem = (id) => {
-        getCurrentList().splice(getCurrentList().findIndex(d => d.id === id), 1);
-        refreshAll();
+    // ★ 滞在時間の更新
+    window.updateStayTime = (id, newVal) => {
+        const item = getCurrentDayList().find(d => d.id === id);
+        if(item) {
+            item.stayTime = parseInt(newVal) || 0;
+            refreshSchedule();
+        }
     };
 
-    // --- ★ メモ機能 (Step 8 追加) ---
+    async function addLocation() {
+        if (!window.currentLatLng) { alert("場所を選択してください"); return; }
+        const name = document.getElementById('placeName').value;
+        const time = parseInt(document.getElementById('stayTime').value);
+        const mode = document.getElementById('travelMode').value;
+        const latLngObj = window.currentLatLng.toJSON ? window.currentLatLng.toJSON() : window.currentLatLng;
+        getCurrentDayList().push({ id: Date.now(), name: name, stayTime: time, latLng: latLngObj, mode: mode, isMove: false, memo: "" });
+        await refreshSchedule();
+        document.getElementById('placeName').value = ''; window.currentLatLng = null;
+    }
+
+    function addCurrentLocation() {
+        if(!navigator.geolocation) { alert("このブラウザは位置情報に対応していません"); return; }
+        navigator.geolocation.getCurrentPosition(pos => {
+            const latLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            map.setCenter(latLng);
+            getCurrentDayList().push({ id: Date.now(), name: "📍 現在地", stayTime: 0, latLng: latLng, mode: "DRIVING", isMove: false, memo: "" });
+            refreshSchedule();
+        }, () => { alert("位置情報の取得に失敗しました"); });
+    }
+
     window.openMemoModal = (id) => {
-        const item = getCurrentList().find(d => d.id === id);
+        const item = getCurrentDayList().find(d => d.id === id);
         if(!item) return;
         editingMemoId = id;
         document.getElementById('memoInput').value = item.memo || "";
         document.getElementById('memoModal').style.display = 'flex';
         document.getElementById('memoInput').focus();
     };
-    
-    window.closeMemoModal = () => {
-        document.getElementById('memoModal').style.display = 'none';
-        editingMemoId = null;
-    };
-    
+    window.closeMemoModal = () => { document.getElementById('memoModal').style.display = 'none'; editingMemoId = null; };
     window.saveMemo = () => {
         if(editingMemoId === null) return;
-        const item = getCurrentList().find(d => d.id === editingMemoId);
-        if(item) {
-            item.memo = document.getElementById('memoInput').value;
-            refreshAll(); // 画面更新してメモを表示に反映
-        }
+        const item = getCurrentDayList().find(d => d.id === editingMemoId);
+        if(item) { item.memo = document.getElementById('memoInput').value; refreshSchedule(); }
         closeMemoModal();
     };
 
-    // --- 全体更新 ---
-    async function refreshAll() {
-        const listEl = document.getElementById("placeList");
-        listEl.innerHTML = "";
+    // --- スケジュール計算・描画 ---
+    async function refreshSchedule() {
         clearMapOverlays();
-
-        const currentList = getCurrentList();
-        const timeStr = tripData.startTimes[currentDayIndex];
-        const [startH, startM] = timeStr.split(':').map(Number);
-        let currentTimeMin = startH * 60 + startM;
+        const list = getCurrentDayList();
+        const timeStr = tripData.startTimes[currentDayIndex] || "09:00";
+        const [h, m] = timeStr.split(':').map(Number);
+        let currentTimeMin = h * 60 + m;
+        const displayList = [];
         const chartSegments = [{ duration: currentTimeMin, color: 'transparent' }];
 
-        currentList.forEach((item, index) => {
-            markers.push(new google.maps.Marker({ position: { lat: item.lat, lng: item.lng }, map: map, label: (index + 1).toString() }));
+        list.forEach((item, idx) => {
+            markers.push(new google.maps.Marker({ position: item.latLng, map: map, label: (idx+1).toString(), title: item.name }));
         });
 
-        for (let i = 0; i < currentList.length; i++) {
-            const item = currentList[i];
+        for (let i = 0; i < list.length; i++) {
+            const item = list[i];
             let moveTime = 0;
-
             if (i > 0) {
-                const prev = currentList[i - 1];
-                moveTime = await calculateRoute(prev, item);
-                const moveLi = document.createElement("li");
-                moveLi.className = "move-item"; 
-                moveLi.innerText = `⬇️ 移動: ${moveTime}分 ⬇️`;
-                listEl.appendChild(moveLi);
-                currentTimeMin += moveTime;
+                const prev = list[i-1];
+                moveTime = await calculateRoute(prev.latLng, item.latLng, item.mode);
+                displayList.push({ name: `移動 (${item.mode})`, time: moveTime, isMove: true });
                 chartSegments.push({ duration: moveTime, color: '#ff9800' });
+                currentTimeMin += moveTime;
             }
-
-            const stay = (i === 0 && currentList.length > 1) ? 0 : item.stayTime;
+            const stay = (i === 0 && list.length > 1) ? 0 : item.stayTime;
             item.displayStartTime = formatTime(currentTimeMin);
             item.displayEndTime = formatTime(currentTimeMin + stay);
 
-            // ★ メモ表示ロジック
-            const hasMemo = item.memo && item.memo.length > 0;
-            const memoIconClass = hasMemo ? "btn-icon btn-memo has-memo" : "btn-icon btn-memo";
-            // メモがある場合のみ、div要素を作成（CSSでホバー時のみ表示される）
-            const memoBoxHtml = hasMemo ? `<div class="item-memo-box">📝 ${item.memo}</div>` : "";
-
-            const placeLi = document.createElement("li");
-            placeLi.className = "place-item";
-            placeLi.setAttribute("data-id", item.id);
-            placeLi.innerHTML = `
-                <div class="item-top">
-                    <div style="flex:1;">
-                        <strong>${item.name}</strong><br>
-                        <span style="font-size:0.8rem; color:#666;">${item.displayStartTime} - ${item.displayEndTime} (滞在${stay}分)</span>
-                    </div>
-                    <div>
-                        <button class="${memoIconClass}" onclick="openMemoModal(${item.id})">📝</button>
-                        <button class="btn-icon btn-del" onclick="deleteItem(${item.id})">🗑</button>
-                    </div>
-                </div>
-                ${memoBoxHtml} `;
-            listEl.appendChild(placeLi);
-
-            currentTimeMin += stay;
+            displayList.push({ ...item, startTime: item.displayStartTime, endTime: item.displayEndTime });
             chartSegments.push({ duration: stay, color: '#4285f4' });
+            currentTimeMin += stay;
         }
+        renderList(displayList);
         updateClockCharts(chartSegments);
     }
 
-    function calculateRoute(start, end) {
+    function calculateRoute(start, end, mode) {
         return new Promise(resolve => {
-            directionsService.route({
-                origin: { lat: start.lat, lng: start.lng },
-                destination: { lat: end.lat, lng: end.lng },
-                travelMode: google.maps.TravelMode[end.mode]
-            }, (res, status) => {
+            directionsService.route({ origin: start, destination: end, travelMode: google.maps.TravelMode[mode] }, (res, status) => {
                 if (status === 'OK') {
-                    const renderer = new google.maps.DirectionsRenderer({
-                        map: map, directions: res, suppressMarkers: true,
-                        polylineOptions: { strokeColor: '#1a73e8', strokeWeight: 5, strokeOpacity: 0.6 }
-                    });
+                    const renderer = new google.maps.DirectionsRenderer({ map: map, directions: res, suppressMarkers: true, polylineOptions: { strokeColor: mode==='WALKING'?'#4caf50':'#1a73e8', strokeWeight: 5, strokeOpacity: 0.6 } });
                     routeRenderers.push(renderer);
                     resolve(Math.ceil(res.routes[0].legs[0].duration.value / 60));
                 } else { resolve(15); }
@@ -372,26 +332,110 @@
         });
     }
 
-    function initSortable() {
-        sortable = new Sortable(document.getElementById('placeList'), {
-            animation: 150, filter: '.move-item', 
-            onEnd: () => {
-                const newOrder = [];
-                const currentList = getCurrentList();
-                document.querySelectorAll('.place-item').forEach(el => {
-                    const id = parseFloat(el.getAttribute('data-id'));
-                    const found = currentList.find(d => d.id === id);
-                    if (found) newOrder.push(found);
-                });
-                tripData.days[currentDayIndex] = newOrder;
-                refreshAll();
+    function renderList(list) {
+        const ul = document.getElementById('scheduleList'); ul.innerHTML = '';
+        list.forEach(item => {
+            const li = document.createElement('li');
+            li.className = `place-item ${item.isMove ? 'move-item' : ''}`;
+            if (!item.isMove) li.setAttribute('data-id', item.id);
+
+            if (item.isMove) {
+                li.innerHTML = `<span>⬇️ 移動 (${item.time}分) ⬇️</span>`;
+            } else {
+                const hasMemo = item.memo && item.memo.length > 0;
+                const memoClass = hasMemo ? "btn-icon btn-memo has-memo" : "btn-icon btn-memo";
+                const memoBoxHtml = hasMemo ? `<div class="item-memo-box">📝 ${item.memo}</div>` : "";
+                
+                // ★ 滞在時間入力欄 (updateStayTime呼び出し)
+                li.innerHTML = `
+                    <div class="item-top">
+                        <div style="flex:1;">
+                            <strong>${item.name}</strong><br>
+                            <span style="font-size:0.8rem;color:#666;">
+                                ${item.startTime} - ${item.endTime} 
+                                (滞在 <input type="number" class="tiny-input" value="${item.stayTime}" onchange="updateStayTime(${item.id}, this.value)" onclick="event.stopPropagation()"> 分)
+                            </span>
+                        </div>
+                        <div class="item-btns">
+                            <button class="${memoClass}" onclick="openMemoModal(${item.id})">📝</button>
+                            <button class="btn-icon btn-del" onclick="deleteItem(${item.id})">🗑</button>
+                        </div>
+                    </div>
+                    ${memoBoxHtml}
+                `;
             }
+            ul.appendChild(li);
         });
     }
+
+    window.deleteItem = (id) => {
+        getCurrentDayList().splice(getCurrentDayList().findIndex(d => d.id === id), 1);
+        refreshSchedule();
+    };
+
+    // --- 保存機能 ---
+    function saveTripLocal() {
+        let name = currentPlanName || prompt("プラン名を入力:", "東京旅行");
+        if (!name) return;
+        currentPlanName = name;
+        const saveData = { tripData: tripData, savedAt: new Date().toISOString() };
+        let allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
+        allSaves[name] = saveData;
+        localStorage.setItem("travel_planner_saves", JSON.stringify(allSaves));
+        alert("保存しました");
+    }
+    function renderSavedPlansList() {
+        const ul = document.getElementById('saved-plans-list'); ul.innerHTML = '';
+        const allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
+        Object.keys(allSaves).reverse().forEach(name => {
+            const li = document.createElement('li'); li.className = 'saved-plan-card';
+            li.innerHTML = `<div class="plan-info" onclick="loadLocal('${name}')"><h3>${name}</h3></div><div class="plan-delete" onclick="deleteLocal('${name}')">🗑</div>`;
+            ul.appendChild(li);
+        });
+    }
+    window.loadLocal = (name) => {
+        const allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
+        if (allSaves[name]) { tripData = allSaves[name].tripData; currentDayIndex = 0; currentPlanName = name; showPlanner(); }
+    };
+    window.deleteLocal = (name) => {
+        if(confirm("削除しますか？")) {
+            let allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
+            delete allSaves[name]; localStorage.setItem("travel_planner_saves", JSON.stringify(allSaves)); renderSavedPlansList();
+        }
+    };
+
+    // --- ★ 全日程概要 (滞在時間表示) ---
+    function showSummary() {
+        const div = document.getElementById('summaryContent'); div.innerHTML = '';
+        tripData.days.forEach((dayList, i) => {
+            let html = `<div class="summary-day"><div class="summary-day-title">Day ${i+1} (出発: ${tripData.startTimes[i]})</div>`;
+            if(dayList.length===0) html+=`<div style="padding:10px;color:#999">(予定なし)</div>`;
+            dayList.forEach(item => { 
+                const timeStr = (item.displayStartTime) ? `${item.displayStartTime} - ${item.displayEndTime}` : "---";
+                const memoHtml = (item.memo) ? `<div class="summary-memo">📝 ${item.memo}</div>` : "";
+                
+                // 滞在時間を明記
+                const stayStr = (item.stayTime > 0) ? `(滞在: ${item.stayTime}分)` : "(出発地)";
+                
+                html += `
+                    <div style="padding:5px; border-bottom:1px solid #f0f0f0; display:flex; gap:10px;">
+                        <div style="min-width:80px; color:#666; font-size:0.8rem;">${timeStr}</div>
+                        <div style="flex:1;">
+                            <strong>${item.name}</strong> 
+                            <span style="font-size:0.8rem; color:#888; margin-left:5px;">${stayStr}</span>
+                            ${memoHtml}
+                        </div>
+                    </div>`; 
+            });
+            html += `</div>`; div.innerHTML += html;
+        });
+        document.getElementById('summaryModal').style.display = 'flex';
+    }
+
     function initCharts() {
-        const config = { type: 'pie', data: { datasets: [{ data: [], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, rotation: 0, circumference: 360, events: [], plugins: { legend: { display: false }, tooltip: { enabled: false } } } };
-        chartAM = new Chart(document.getElementById('chartAM'), JSON.parse(JSON.stringify(config)));
-        chartPM = new Chart(document.getElementById('chartPM'), JSON.parse(JSON.stringify(config)));
+        const cfg = { type: 'pie', data: { datasets: [{ data: [], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, rotation: 0, circumference: 360, events: [], plugins: { legend: { display: false }, tooltip: { enabled: false } } } };
+        chartAM = new Chart(document.getElementById('chartAM'), JSON.parse(JSON.stringify(cfg)));
+        chartPM = new Chart(document.getElementById('chartPM'), JSON.parse(JSON.stringify(cfg)));
     }
     function updateClockCharts(segments) {
         const amData=[], amColors=[], pmData=[], pmColors=[]; let current=0;
@@ -408,56 +452,18 @@
         chartAM.data.datasets[0].data=amData; chartAM.data.datasets[0].backgroundColor=amColors; chartAM.update();
         chartPM.data.datasets[0].data=pmData; chartPM.data.datasets[0].backgroundColor=pmColors; chartPM.update();
     }
-    function formatTime(min) {
-        let h = Math.floor(min / 60) % 24; let m = min % 60;
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    function initSortable() {
+        sortable = new Sortable(document.getElementById('scheduleList'), {
+            animation: 150, handle: '.place-item', 
+            onEnd: async () => { 
+                const list = getCurrentDayList(); const newList = [];
+                document.querySelectorAll('.place-item').forEach(el => { const id=parseFloat(el.getAttribute('data-id')); const d=list.find(x=>x.id===id); if(d) newList.push(d); });
+                tripData.days[currentDayIndex] = newList; await refreshSchedule(); 
+            }
+        });
     }
-    
     function clearMapOverlays() { routeRenderers.forEach(r => r.setMap(null)); routeRenderers=[]; markers.forEach(m => m.setMap(null)); markers=[]; }
-
-    function showSummary() {
-        const content = document.getElementById("summaryContent"); content.innerHTML = "";
-        tripData.days.forEach((dayList, i) => {
-            let html = `<div class="summary-day"><div class="summary-day-title">Day ${i+1}</div>`;
-            if(dayList.length===0) html+=`<div style="padding:10px;color:#999">(予定なし)</div>`;
-            dayList.forEach(item => { 
-                const memoHtml = item.memo ? `<span class="summary-memo">📝 ${item.memo}</span>` : "";
-                html += `<div style="padding:5px; border-bottom:1px solid #f0f0f0;"><strong>${item.name}</strong> (${item.displayStartTime || '--'} - ${item.displayEndTime || '--'}) ${memoHtml}</div>`; 
-            });
-            html += `</div>`; content.innerHTML += html;
-        });
-        document.getElementById("summaryModal").style.display = "flex";
-    }
-
-    function saveTripLocal() {
-        let name = currentPlanName || prompt("プラン名を入力:", "東京旅行");
-        if (!name) return;
-        currentPlanName = name;
-        const saveData = { tripData: tripData, savedAt: new Date().toISOString() };
-        let allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
-        allSaves[name] = saveData;
-        localStorage.setItem("travel_planner_saves", JSON.stringify(allSaves));
-        alert("保存しました");
-    }
-    function renderSavedPlansList() {
-        const ul = document.getElementById('saved-plans-list'); ul.innerHTML = '';
-        const allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
-        Object.keys(allSaves).reverse().forEach(name => {
-            const li = document.createElement('li'); li.className = 'saved-plan-card';
-            li.innerHTML = `<div class="plan-info" onclick="loadLocal('${name}')" style="flex:1;"><h3>${name}</h3></div><div class="plan-delete" onclick="deleteLocal('${name}')">🗑</div>`;
-            ul.appendChild(li);
-        });
-    }
-    window.loadLocal = (name) => {
-        const allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
-        if (allSaves[name]) { tripData = allSaves[name].tripData; currentDayIndex = 0; currentPlanName = name; showPlanner(); }
-    };
-    window.deleteLocal = (name) => {
-        if(confirm("削除しますか？")) {
-            let allSaves = JSON.parse(localStorage.getItem("travel_planner_saves") || "{}");
-            delete allSaves[name]; localStorage.setItem("travel_planner_saves", JSON.stringify(allSaves)); renderSavedPlansList();
-        }
-    };
+    function formatTime(min) { let h=Math.floor(min/60)%24; let m=min%60; return `${h}:${m.toString().padStart(2,'0')}`; }
 
 </script>
 
